@@ -5,7 +5,7 @@ import { navigationRef } from './navigationRef';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { lazyScreen, prefetchModule } from '../utils/lazyLoading';
+import { lazyScreen, lazyStack, prefetchModule } from '../utils/lazyLoading';
 import { RootStackParamList, TabParamList } from './types';
 import { useTheme } from '../theme';
 import { darkNavigationTheme, lightNavigationTheme } from '../theme/navigationTheme';
@@ -450,10 +450,20 @@ const TabNavigator = () => {
 
 export const AppNavigator = () => {
   React.useEffect(() => {
+    // Screen-level prefetch: eagerly load the most commonly navigated screens
+    // so transitions after the first frame feel instant.
     prefetchModule('AddSubscription', () => import('../screens/AddSubscriptionScreen'));
     prefetchModule('WalletConnect', () => import('../screens/WalletConnectV2Screen'));
     prefetchModule('Analytics', () => import('../screens/AnalyticsScreen'));
     prefetchModule('SubscriptionDetail', () => import('../screens/SubscriptionDetailScreen'));
+    // Settings screens — prefetch the whole Settings module after initial render.
+    // For route-level dynamic code splitting of entire stacks, use lazyStack() from
+    // lazyLoading.tsx, e.g.:
+    //   const SettingsStack = lazyStack(() => import('./modules/SettingsStack')
+    //     .then(m => ({ default: m.SettingsStack })));
+    // This keeps settings JS out of the initial bundle entirely.
+    prefetchModule('Settings', () => import('../screens/SettingsScreen'));
+    prefetchModule('RevenueReport', () => import('../screens/RevenueReportScreen'));
   }, []);
 
   const { isDark } = useTheme();
