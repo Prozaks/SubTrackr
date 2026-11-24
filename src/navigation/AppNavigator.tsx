@@ -5,15 +5,30 @@ import { navigationRef } from './navigationRef';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { prefetchModule } from '../utils/lazyLoading';
+import { prefetchModule, lazyStack } from '../utils/lazyLoading';
 import { RootNavigatorParamList, TabParamList } from './types';
 import { useTheme } from '../theme';
 import { darkNavigationTheme, lightNavigationTheme } from '../theme/navigationTheme';
 import { NavigationErrorBoundary } from './NavigationErrorBoundary';
 import { linkingConfig } from './linking';
+// HomeTab / SubscriptionStack is the landing tab — load it eagerly so the first
+// frame renders without a Suspense boundary flash.
+import { SubscriptionStack } from './modules';
 
-// Import feature-based stack modules
-import { SubscriptionStack, AnalyticsStack, SettingsStack, WalletStack } from './modules';
+// All other stacks are loaded on-demand the first time the user navigates to
+// their tab (or prefetched after the first frame via prefetchModule below).
+const AnalyticsStack = lazyStack(
+  () => import('./modules/AnalyticsStack').then((m) => ({ default: m.AnalyticsStack })),
+  { displayName: 'LazyStack(Analytics)' }
+);
+const WalletStack = lazyStack(
+  () => import('./modules/WalletStack').then((m) => ({ default: m.WalletStack })),
+  { displayName: 'LazyStack(Wallet)' }
+);
+const SettingsStack = lazyStack(
+  () => import('./modules/SettingsStack').then((m) => ({ default: m.SettingsStack })),
+  { displayName: 'LazyStack(Settings)' }
+);
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootNavigatorParamList>();
